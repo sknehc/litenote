@@ -21,8 +21,24 @@ UPLOAD_VIDEO_FOLDER = os.path.join(DATA_DIR, "videos")
 app.config["UPLOAD_IMAGE_FOLDER"] = UPLOAD_IMAGE_FOLDER
 app.config["UPLOAD_VIDEO_FOLDER"] = UPLOAD_VIDEO_FOLDER
 
-# 跨域配置
+# 跨域配置（保留，但仅本机访问时跨域意义不大，可根据需要保留/删除）
 CORS(app, resources={r"/upload_image": {"origins": "*"}, r"/upload_video": {"origins": "*"}})
+
+
+# ========== 新增：IP 限制中间件 ==========
+@app.before_request
+def restrict_access():
+    # 允许的本机 IP（涵盖 IPv4/IPv6 本机地址）
+    allowed_ips = {"127.0.0.1", "::1"}
+    # 获取客户端真实 IP（优先取 X-Real-IP 反向代理头，无则取 remote_addr）
+    client_ip = request.headers.get("X-Real-IP", request.remote_addr)
+
+    # 仅放行本机 IP
+    if client_ip not in allowed_ips:
+        return jsonify({"error": "禁止访问：仅允许本机访问"}), 403
+
+
+# ========================================
 
 # 创建文件夹
 for folder in [UPLOAD_IMAGE_FOLDER, UPLOAD_VIDEO_FOLDER]:
@@ -325,4 +341,5 @@ def view_note(note_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5005)
+    # 显式绑定 127.0.0.1（默认就是，显式写更清晰），禁止外网访问
+    app.run(debug=True, host="127.0.0.1", port=5005)
