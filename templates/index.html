@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>litenote笔记</title>
-    <link href="/static/tailwind.min.css" rel="stylesheet" />
-    <script src="/static/highlight.min.js"></script>
-    <style>
+ <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>litenote笔记</title>
+  <link href="/static/tailwind.min.css" rel="stylesheet" />
+  <script src="/static/highlight.min.js"></script>
+  <style>
         * {
             margin: 0;
             padding: 0;
@@ -14,17 +14,18 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         body {
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            background-color: #f0f0f0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f0f0f0;
         }
         .left-container {
-            display: flex;
-            width: 400px;
-            height: 100%;
-            border-right: 1px solid #e0e0e0;
-            background-color: #ffffff;
+    display: flex;
+    width: 400px;
+    height: 100%;
+    border-right: 1px solid #e0e0e0;
+    background-color: #ffffff;
+    flex-shrink: 0;
         }
         .folder-sidebar {
             width: 200px;
@@ -136,18 +137,22 @@
             margin-bottom: 0;
         }
         .note-content {
-            flex: 1;
-            height: 100%;
-            padding: 20px;
-            background-color: #ffffff;
-            display: flex;
-            flex-direction: column;
+    flex: 1;
+    padding: 20px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
         }
 .content-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
+    padding: 0 10px;
+    flex-shrink: 0;
+    min-height: 60px;
 }
 .content-header h2 {
     font-size: 24px;
@@ -177,15 +182,16 @@
             color: #ffd700;
         }
         .note-view {
-            flex: 1;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 10px;
-            overflow-y: auto;
-            background-color: #ffffff;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #333;
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    min-height: 0;
         }
         #editor {
             font-family: Segoe UI, Roboto, sans-serif;
@@ -236,18 +242,20 @@
             background-color: #e7f0fd;
         }
         .editor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
         }
         .editor-content {
-            flex: 1;
-            border: 1px solid #e0e0e0;
-            border-radius: 0 0 4px 4px;
-            padding: 10px;
-            overflow-y: auto;
-            background-color: #fff;
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 0 0 4px 4px;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #fff;
+    min-height: 0;
         }
         .modal-overlay {
             position: fixed;
@@ -343,112 +351,105 @@
             color: #333;
         }
     </style>
-    <script src="/static/marked.min.js"></script>
-</head>
-<body>
-    <div class="left-container">
-        <div class="folder-sidebar">
-            <h2>litenote</h2>
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="folder-search" placeholder="搜索文件夹...">
-            </div>
-            <button class="add-folder-btn">+ 新建文件夹</button>
-            <div class="folder-list" id="folder-list"></div>
-        </div>
-        <div class="note-sidebar">
-            <div class="note-sidebar-header">
-                <h3>我的笔记</h3>
-                <button class="add-note-btn">+ 新建笔记</button>
-            </div>
-            <div class="note-list" id="note-list"></div>
-        </div>
+  <script src="/static/marked.min.js"></script>
+ </head>
+ <body>
+  <div class="left-container">
+   <div class="folder-sidebar">
+    <h2>litenote</h2>
+    <div class="search-box">
+     <span class="search-icon">&#55357;&#56589;</span>
+     <input type="text" id="folder-search" placeholder="搜索文件夹..." />
     </div>
-
-    <div class="note-content">
-        <div class="content-header">
-            <h2 id="edit-header">笔记标题</h2>
-            <button class="edit-btn" id="edit-btn">编辑笔记</button>
-            <button class="save-btn" id="save-btn" style="display: none;">保存并退出</button>
-        </div>
-
-        <div class="editor-container" id="richEditorContainer" style="display: none;">
-            <div class="editor-toolbar" id="editorToolbar">
-                <button class="tool-btn" onclick="insertElement('h1')"><img src="/static/svg/title.svg" alt="标题" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('h2')"><img src="/static/svg/header.svg" alt="副标题" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('p')"><img src="/static/svg/paragraph.svg" alt="段落" class="w-5 h-5" /></button>
-                <div class="border-r border-gray-300 mx-2"></div>
-                <button class="tool-btn" onclick="toggleFormat('bold')"><img src="/static/svg/bold.svg" alt="粗体" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="toggleFormat('italic')"><img src="/static/svg/italic.svg" alt="斜体" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="toggleFormat('underline')"><img src="/static/svg/underline.svg" alt="下划线" class="w-5 h-5" /></button>
-                <div class="border-r border-gray-300 mx-2"></div>
-                <button class="tool-btn" onclick="insertElement('ul')"><img src="/static/svg/bullet-list.svg" alt="无序列表" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('ol')"><img src="/static/svg/num-list.svg" alt="有序列表" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('checklist')"><img src="/static/svg/checklist.svg" alt="复选列表" class="w-5 h-5" /></button>
-                <div class="border-r border-gray-300 mx-2"></div>
-                <button class="tool-btn" onclick="document.getElementById('imageUpload').click()"><img src="/static/svg/image.svg" alt="插入图片" class="w-5 h-5" /></button>
-                <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
-                <button class="tool-btn" onclick="document.getElementById('videoUpload').click()"><img src="/static/svg/video.svg" alt="插入视频" class="w-5 h-5" /></button>
-                <input type="file" id="videoUpload" accept="video/*" class="hidden" onchange="handleVideoUpload(event)" />
-                <div class="border-r border-gray-300 mx-2"></div>
-                <button class="tool-btn" id="tableButton"><img src="/static/svg/table.svg" alt="插入表格" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('code')"><img src="/static/svg/code.svg" alt="插入代码" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('blockquote')"><img src="/static/svg/quote.svg" alt="引用" class="w-5 h-5" /></button>
-                <button class="tool-btn" onclick="insertElement('delimiter')"><img src="/static/svg/dots.svg" alt="分隔线" class="w-5 h-5" /></button>
-            </div>
-            <div class="editor-content">
-                <div id="editor" contenteditable="true" class="focus:outline-none w-full min-h-[700px]"></div>
-            </div>
-        </div>
-
-        <div id="tableGrid" class="modal-overlay hidden" style="justify-content: flex-start; align-items: flex-start; padding: 100px 0 0 300px;">
-            <div class="modal-content" style="min-width: auto;">
-                <div class="grid grid-cols-10 gap-1" id="tableGridContent"></div>
-            </div>
-        </div>
-
-        <div id="textToolbar" class="absolute flex z-50 mt-1 gap-2 bg-white p-2 rounded-lg shadow-md hidden">
-            <button onclick="toggleFormat('bold')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/bold.svg" alt="粗体" class="w-4 h-4" /></button>
-            <button onclick="toggleFormat('italic')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/italic.svg" alt="斜体" class="w-4 h-4" /></button>
-            <button onclick="toggleFormat('underline')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/underline.svg" alt="下划线" class="w-4 h-4" /></button>
-            <button onclick="toggleFormat('highlight')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/highlight.svg" alt="高亮" class="w-4 h-4" /></button>
-            <button onclick="toggleFormat('link')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/link.svg" alt="链接" class="w-4 h-4" /></button>
-        </div>
-
-        <div class="note-view" id="note-view"></div>
+    <button class="add-folder-btn">+ 新建文件夹</button>
+    <div class="folder-list" id="folder-list"></div>
+   </div>
+   <div class="note-sidebar">
+    <div class="note-sidebar-header">
+     <h3>我的笔记</h3>
+     <button class="add-note-btn">+ 新建笔记</button>
     </div>
-
-    <div class="modal" id="folder-modal">
-        <div class="modal-content">
-            <h4 id="modal-title">新建文件夹</h4>
-            <input type="text" id="folder-name-input" placeholder="输入文件夹名称...">
-            <div class="modal-actions">
-                <button class="modal-btn cancel-btn" id="folder-modal-cancel">取消</button>
-                <button class="modal-btn confirm-btn" id="folder-modal-confirm">确定</button>
-            </div>
-        </div>
+    <div class="note-list" id="note-list"></div>
+   </div>
+  </div>
+  <div class="note-content">
+   <div class="content-header">
+    <h2 id="edit-header">笔记标题</h2>
+    <button class="edit-btn" id="edit-btn">编辑笔记</button>
+    <button class="save-btn" id="save-btn" style="display: none;">保存并退出</button>
+   </div>
+   <div class="editor-container" id="richEditorContainer" style="display: none;">
+    <div class="editor-toolbar" id="editorToolbar">
+     <button class="tool-btn" onclick="insertElement('h1')"><img src="/static/svg/title.svg" alt="标题" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('h2')"><img src="/static/svg/header.svg" alt="副标题" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('p')"><img src="/static/svg/paragraph.svg" alt="段落" class="w-5 h-5" /></button>
+     <div class="border-r border-gray-300 mx-2"></div>
+     <button class="tool-btn" onclick="toggleFormat('bold')"><img src="/static/svg/bold.svg" alt="粗体" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="toggleFormat('italic')"><img src="/static/svg/italic.svg" alt="斜体" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="toggleFormat('underline')"><img src="/static/svg/underline.svg" alt="下划线" class="w-5 h-5" /></button>
+     <div class="border-r border-gray-300 mx-2"></div>
+     <button class="tool-btn" onclick="insertElement('ul')"><img src="/static/svg/bullet-list.svg" alt="无序列表" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('ol')"><img src="/static/svg/num-list.svg" alt="有序列表" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('checklist')"><img src="/static/svg/checklist.svg" alt="复选列表" class="w-5 h-5" /></button>
+     <div class="border-r border-gray-300 mx-2"></div>
+     <button class="tool-btn" onclick="document.getElementById('imageUpload').click()"><img src="/static/svg/image.svg" alt="插入图片" class="w-5 h-5" /></button>
+     <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
+     <button class="tool-btn" onclick="document.getElementById('videoUpload').click()"><img src="/static/svg/video.svg" alt="插入视频" class="w-5 h-5" /></button>
+     <input type="file" id="videoUpload" accept="video/*" class="hidden" onchange="handleVideoUpload(event)" />
+     <div class="border-r border-gray-300 mx-2"></div>
+     <button class="tool-btn" id="tableButton"><img src="/static/svg/table.svg" alt="插入表格" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('code')"><img src="/static/svg/code.svg" alt="插入代码" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('blockquote')"><img src="/static/svg/quote.svg" alt="引用" class="w-5 h-5" /></button>
+     <button class="tool-btn" onclick="insertElement('delimiter')"><img src="/static/svg/dots.svg" alt="分隔线" class="w-5 h-5" /></button>
     </div>
-    <div class="modal" id="note-modal">
-        <div class="modal-content">
-            <h4 id="note-modal-title">新建笔记</h4>
-            <input type="text" id="note-name-input" placeholder="输入笔记名称...">
-            <div class="modal-actions">
-                <button class="modal-btn cancel-btn" id="note-modal-cancel">取消</button>
-                <button class="modal-btn confirm-btn" id="note-modal-confirm">确定</button>
-            </div>
-        </div>
+    <div class="editor-content">
+     <div id="editor" contenteditable="true" class="focus:outline-none w-full min-h-[700px]"></div>
     </div>
-    <div class="confirm-modal" id="confirm-modal">
-        <div class="confirm-content">
-            <p id="confirm-text">确定要删除吗？</p>
-            <div class="modal-actions">
-                <button class="modal-btn cancel-btn" id="confirm-cancel">取消</button>
-                <button class="modal-btn confirm-btn" id="confirm-ok">确定</button>
-            </div>
-        </div>
+   </div>
+   <div id="tableGrid" class="modal-overlay hidden" style="justify-content: flex-start; align-items: flex-start; padding: 100px 0 0 300px;">
+    <div class="modal-content" style="min-width: auto;">
+     <div class="grid grid-cols-10 gap-1" id="tableGridContent"></div>
     </div>
-
-    <script>
+   </div>
+   <div id="textToolbar" class="absolute flex z-50 mt-1 gap-2 bg-white p-2 rounded-lg shadow-md hidden">
+    <button onclick="toggleFormat('bold')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/bold.svg" alt="粗体" class="w-4 h-4" /></button>
+    <button onclick="toggleFormat('italic')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/italic.svg" alt="斜体" class="w-4 h-4" /></button>
+    <button onclick="toggleFormat('underline')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/underline.svg" alt="下划线" class="w-4 h-4" /></button>
+    <button onclick="toggleFormat('highlight')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/highlight.svg" alt="高亮" class="w-4 h-4" /></button>
+    <button onclick="toggleFormat('link')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/link.svg" alt="链接" class="w-4 h-4" /></button>
+   </div>
+   <div class="note-view" id="note-view"></div>
+  </div>
+  <div class="modal" id="folder-modal">
+   <div class="modal-content">
+    <h4 id="modal-title">新建文件夹</h4>
+    <input type="text" id="folder-name-input" placeholder="输入文件夹名称..." />
+    <div class="modal-actions">
+     <button class="modal-btn cancel-btn" id="folder-modal-cancel">取消</button>
+     <button class="modal-btn confirm-btn" id="folder-modal-confirm">确定</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal" id="note-modal">
+   <div class="modal-content">
+    <h4 id="note-modal-title">新建笔记</h4>
+    <input type="text" id="note-name-input" placeholder="输入笔记名称..." />
+    <div class="modal-actions">
+     <button class="modal-btn cancel-btn" id="note-modal-cancel">取消</button>
+     <button class="modal-btn confirm-btn" id="note-modal-confirm">确定</button>
+    </div>
+   </div>
+  </div>
+  <div class="confirm-modal" id="confirm-modal">
+   <div class="confirm-content">
+    <p id="confirm-text">确定要删除吗？</p>
+    <div class="modal-actions">
+     <button class="modal-btn cancel-btn" id="confirm-cancel">取消</button>
+     <button class="modal-btn confirm-btn" id="confirm-ok">确定</button>
+    </div>
+   </div>
+  </div>
+  <script>
     // API请求工具（保持不变）
     const Api = {
         baseUrl: 'http://127.0.0.1:5005',
@@ -683,7 +684,7 @@ headerContainer.replaceChild(input, oldHeader);
 
         // 启动自动保存定时器
         if (state.autoSaveTimer) clearInterval(state.autoSaveTimer);
-        state.autoSaveTimer = setInterval(autoSaveNote, 5000);
+        state.autoSaveTimer = setInterval(autoSaveNote, 30000);
 
         updateSaveBtnStatus();
     }
@@ -1089,5 +1090,5 @@ div.addEventListener('click', async () => {
     init();
     hljs.highlightAll();
     </script>
-</body>
+ </body>
 </html>
