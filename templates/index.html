@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>litenote笔记</title>
+    <link href="/static/tailwind.min.css" rel="stylesheet" />
+    <script src="/static/highlight.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        .left-container {
+            display: flex;
+            width: 400px;
+            height: 100%;
+            border-right: 1px solid #e0e0e0;
+            background-color: #ffffff;
+        }
+        .folder-sidebar {
+            width: 200px;
+            height: 100%;
+            border-right: 1px solid #e0e0e0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .folder-sidebar h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2d2d2d;
+        }
+        .search-box {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 6px 6px 6px 28px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        .add-folder-btn, .add-note-btn {
+            padding: 6px;
+            border: none;
+            background-color: #0078d4;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .add-folder-btn:hover, .add-note-btn:hover, .edit-btn:hover, .save-btn:hover {
+            background-color: #005a9e;
+        }
+        .folder-list, .note-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .folder-item, .note-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 4px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .folder-item:hover, .note-item:hover {
+            background-color: #f0f0f0;
+        }
+        .folder-item.active, .note-item.active {
+            background-color: #e7f0fd;
+            color: #0078d4;
+        }
+        .folder-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .folder-actions button, .delete-note-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 14px;
+        }
+        .folder-actions button:hover {
+            color: #0078d4;
+        }
+        .delete-note-btn:hover {
+            color: #d13438;
+        }
+        .note-sidebar {
+            width: 200px;
+            height: 100%;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .note-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .note-sidebar h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d2d2d;
+        }
+        .add-note-btn {
+            padding: 4px 8px;
+            margin-bottom: 0;
+        }
+        .note-content {
+            flex: 1;
+            height: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+.content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.content-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+        .content-header input {
+            font-size: 24px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 60%;
+        }
+        .edit-btn, .save-btn {
+            padding: 8px 16px;
+            border: none;
+            background-color: #0078d4;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .save-btn.has-draft {
+            color: #ffd700;
+        }
+        .note-view {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
+        #editor {
+            font-family: Segoe UI, Roboto, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        #editor h1 { font-size: 24px; font-weight: 600; margin: 24px 0 16px; }
+        #editor h2 { font-size: 20px; font-weight: 600; margin: 20px 0 12px; }
+        #editor p { margin: 12px 0; }
+        #editor pre code {
+            white-space: pre;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            background-color: #2b2b2b;
+            color: #f8f8f2;
+            padding: 16px;
+            border-radius: 4px;
+            display: block;
+            margin: 16px 0;
+        }
+        #editor ul, #editor ol { margin: 12px 0 12px 24px; }
+        #editor blockquote {
+            border-left: 4px solid var(--onenote-blue);
+            padding-left: 16px;
+            margin: 16px 0;
+            color: #605e5c;
+        }
+        .editor-toolbar {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -1px;
+        }
+        .tool-btn {
+            border: none;
+            background: none;
+            padding: 6px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tool-btn:hover {
+            background-color: #e7f0fd;
+        }
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .editor-content {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 0 0 4px 4px;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #textToolbar {
+            position: absolute;
+            display: flex;
+            z-index: 50;
+            margin-top: 1px;
+            gap: 2px;
+            background-color: white;
+            padding: 2px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .modal, .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        .modal-content, .confirm-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 4px;
+            width: 300px;
+        }
+        .modal-content h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .confirm-btn {
+            background-color: #0078d4;
+            color: white;
+        }
+        .confirm-btn:hover {
+            background-color: #005a9e;
+        }
+        .cancel-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .cancel-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .confirm-content p {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+    <script src="/static/marked.min.js"></script>
+</head>
+<body>
+    <div class="left-container">
+        <div class="folder-sidebar">
+            <h2>litenote</h2>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="folder-search" placeholder="搜索文件夹...">
+            </div>
+            <button class="add-folder-btn">+ 新建文件夹</button>
+            <div class="folder-list" id="folder-list"></div>
+        </div>
+        <div class="note-sidebar">
+            <div class="note-sidebar-header">
+                <h3>我的笔记</h3>
+                <button class="add-note-btn">+ 新建笔记</button>
+            </div>
+            <div class="note-list" id="note-list"></div>
+        </div>
+    </div>
+
+    <div class="note-content">
+        <div class="content-header">
+            <h2 id="edit-header">笔记标题</h2>
+            <button class="edit-btn" id="edit-btn">编辑笔记</button>
+            <button class="save-btn" id="save-btn" style="display: none;">保存并退出</button>
+        </div>
+
+        <div class="editor-container" id="richEditorContainer" style="display: none;">
+            <div class="editor-toolbar" id="editorToolbar">
+                <button class="tool-btn" onclick="insertElement('h1')"><img src="/static/svg/title.svg" alt="标题" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('h2')"><img src="/static/svg/header.svg" alt="副标题" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('p')"><img src="/static/svg/paragraph.svg" alt="段落" class="w-5 h-5" /></button>
+                <div class="border-r border-gray-300 mx-2"></div>
+                <button class="tool-btn" onclick="toggleFormat('bold')"><img src="/static/svg/bold.svg" alt="粗体" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="toggleFormat('italic')"><img src="/static/svg/italic.svg" alt="斜体" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="toggleFormat('underline')"><img src="/static/svg/underline.svg" alt="下划线" class="w-5 h-5" /></button>
+                <div class="border-r border-gray-300 mx-2"></div>
+                <button class="tool-btn" onclick="insertElement('ul')"><img src="/static/svg/bullet-list.svg" alt="无序列表" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('ol')"><img src="/static/svg/num-list.svg" alt="有序列表" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('checklist')"><img src="/static/svg/checklist.svg" alt="复选列表" class="w-5 h-5" /></button>
+                <div class="border-r border-gray-300 mx-2"></div>
+                <button class="tool-btn" onclick="document.getElementById('imageUpload').click()"><img src="/static/svg/image.svg" alt="插入图片" class="w-5 h-5" /></button>
+                <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
+                <button class="tool-btn" onclick="document.getElementById('videoUpload').click()"><img src="/static/svg/video.svg" alt="插入视频" class="w-5 h-5" /></button>
+                <input type="file" id="videoUpload" accept="video/*" class="hidden" onchange="handleVideoUpload(event)" />
+                <div class="border-r border-gray-300 mx-2"></div>
+                <button class="tool-btn" id="tableButton"><img src="/static/svg/table.svg" alt="插入表格" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('code')"><img src="/static/svg/code.svg" alt="插入代码" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('blockquote')"><img src="/static/svg/quote.svg" alt="引用" class="w-5 h-5" /></button>
+                <button class="tool-btn" onclick="insertElement('delimiter')"><img src="/static/svg/dots.svg" alt="分隔线" class="w-5 h-5" /></button>
+            </div>
+            <div class="editor-content">
+                <div id="editor" contenteditable="true" class="focus:outline-none w-full min-h-[700px]"></div>
+            </div>
+        </div>
+
+        <div id="tableGrid" class="modal-overlay hidden" style="justify-content: flex-start; align-items: flex-start; padding: 100px 0 0 300px;">
+            <div class="modal-content" style="min-width: auto;">
+                <div class="grid grid-cols-10 gap-1" id="tableGridContent"></div>
+            </div>
+        </div>
+
+        <div id="textToolbar" class="absolute flex z-50 mt-1 gap-2 bg-white p-2 rounded-lg shadow-md hidden">
+            <button onclick="toggleFormat('bold')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/bold.svg" alt="粗体" class="w-4 h-4" /></button>
+            <button onclick="toggleFormat('italic')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/italic.svg" alt="斜体" class="w-4 h-4" /></button>
+            <button onclick="toggleFormat('underline')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/underline.svg" alt="下划线" class="w-4 h-4" /></button>
+            <button onclick="toggleFormat('highlight')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/highlight.svg" alt="高亮" class="w-4 h-4" /></button>
+            <button onclick="toggleFormat('link')" class="px-2 py-1 hover:bg-gray-100 rounded"><img src="/static/svg/link.svg" alt="链接" class="w-4 h-4" /></button>
+        </div>
+
+        <div class="note-view" id="note-view"></div>
+    </div>
+
+    <div class="modal" id="folder-modal">
+        <div class="modal-content">
+            <h4 id="modal-title">新建文件夹</h4>
+            <input type="text" id="folder-name-input" placeholder="输入文件夹名称...">
+            <div class="modal-actions">
+                <button class="modal-btn cancel-btn" id="folder-modal-cancel">取消</button>
+                <button class="modal-btn confirm-btn" id="folder-modal-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="note-modal">
+        <div class="modal-content">
+            <h4 id="note-modal-title">新建笔记</h4>
+            <input type="text" id="note-name-input" placeholder="输入笔记名称...">
+            <div class="modal-actions">
+                <button class="modal-btn cancel-btn" id="note-modal-cancel">取消</button>
+                <button class="modal-btn confirm-btn" id="note-modal-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+    <div class="confirm-modal" id="confirm-modal">
+        <div class="confirm-content">
+            <p id="confirm-text">确定要删除吗？</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel-btn" id="confirm-cancel">取消</button>
+                <button class="modal-btn confirm-btn" id="confirm-ok">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // API请求工具（保持不变）
+    const Api = {
+        baseUrl: 'http://127.0.0.1:5005',
+        getFolders() { return fetch(`${this.baseUrl}/get_folders`).then(res => res.json()).catch(() => [{id: 1, name: '我的笔记本'}]); },
+        addFolder(name) {
+            return fetch(`${this.baseUrl}/add_folder`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `name=${encodeURIComponent(name)}`
+            }).then(res => res.json()).then(data => { if (!data.success) alert(data.error || '新建文件夹失败'); return data.success; }).catch(() => { alert('网络错误，新建文件夹失败'); return false; });
+        },
+        editFolder(folderId, newName) {
+            return fetch(`${this.baseUrl}/edit_folder/${folderId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `name=${encodeURIComponent(newName)}`
+            }).then(res => res.json()).then(data => { if (!data.success) alert(data.error || '编辑文件夹失败'); return data.success; }).catch(() => { alert('网络错误，编辑文件夹失败'); return false; });
+        },
+        deleteFolder(folderId) { return fetch(`${this.baseUrl}/delete_folder/${folderId}`, {method: 'POST'}).then(res => res.ok); },
+        getNotes(folderId) { return fetch(`${this.baseUrl}/get_notes?folder_id=${folderId}`).then(res => res.json()).catch(() => []); },
+        addNote(folderId, title) {
+            return fetch(`${this.baseUrl}/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title, folder_id: folderId, subtitle: ''})
+            }).then(res => res.json());
+        },
+        deleteNote(noteId) { return fetch(`${this.baseUrl}/delete/${noteId}`, {method: 'POST'}).then(res => res.ok); },
+        getNoteDetail(noteId) { return fetch(`${this.baseUrl}/api/note/${noteId}`).then(res => res.json()).catch(() => ({content: ''})); },
+        saveNote(noteId, title, content) {
+            return fetch(`${this.baseUrl}/save/${noteId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title, content})
+            }).then(res => res.json());
+        },
+        uploadImage(formData) { return fetch(`${this.baseUrl}/upload_image`, {method: 'POST', body: formData}).then(res => res.json()); },
+        uploadVideo(formData) { return fetch(`${this.baseUrl}/upload_video`, {method: 'POST', body: formData}).then(res => res.json()); }
+    };
+
+    const state = {
+        currentFolderId: null,
+        currentNoteId: null,
+        isEditing: false,
+        isDirty: false,
+        autoSaveTimer: null,
+        isSaving: false,
+        originalTitle: '',   // 进入编辑时的原始标题
+        originalContent: ''  // 进入编辑时的原始正文
+    };
+
+    const elements = {
+        folderSearch: document.getElementById('folder-search'),
+        addFolderBtn: document.querySelector('.add-folder-btn'),
+        folderList: document.getElementById('folder-list'),
+        addNoteBtn: document.querySelector('.add-note-btn'),
+        noteList: document.getElementById('note-list'),
+        editBtn: document.getElementById('edit-btn'),
+        saveBtn: document.getElementById('save-btn'),
+        noteView: document.getElementById('note-view'),
+        richEditorContainer: document.getElementById('richEditorContainer'),
+        editor: document.getElementById('editor'),
+        folderModal: document.getElementById('folder-modal'),
+        modalTitle: document.getElementById('modal-title'),
+        folderNameInput: document.getElementById('folder-name-input'),
+        folderModalCancel: document.getElementById('folder-modal-cancel'),
+        folderModalConfirm: document.getElementById('folder-modal-confirm'),
+        noteModal: document.getElementById('note-modal'),
+        noteModalTitle: document.getElementById('note-modal-title'),
+        noteNameInput: document.getElementById('note-name-input'),
+        noteModalCancel: document.getElementById('note-modal-cancel'),
+        noteModalConfirm: document.getElementById('note-modal-confirm'),
+        confirmModal: document.getElementById('confirm-modal'),
+        confirmText: document.getElementById('confirm-text'),
+        confirmCancel: document.getElementById('confirm-cancel'),
+        confirmOk: document.getElementById('confirm-ok'),
+        editHeader: document.getElementById('edit-header')
+    };
+
+    // 辅助函数：更新笔记列表中的标题
+    function updateNoteTitleInList(noteId, newTitle) {
+        const noteItems = document.querySelectorAll('.note-item');
+        for (let item of noteItems) {
+            if (item.dataset.id == noteId) {
+                const titleSpan = item.querySelector('span:first-child');
+                if (titleSpan) titleSpan.textContent = newTitle;
+                break;
+            }
+        }
+    }
+
+    // 保存笔记（标题+内容）
+    async function saveNote(shouldUpdateUI = true) {
+        if (!state.currentNoteId || state.isSaving) return false;
+        state.isSaving = true;
+        elements.saveBtn.textContent = "保存中...";
+
+        let title = state.originalTitle;
+        let content = state.originalContent;
+        if (state.isEditing) {
+            // 编辑模式下，从界面获取
+            const titleInput = document.getElementById('edit-title-input');
+            if (titleInput) title = titleInput.value.trim();
+            content = elements.editor.innerHTML;
+        } else {
+            // 非编辑模式（正常情况下不会调用保存，但以防万一）
+            return false;
+        }
+
+        if (!title) {
+            alert("标题不能为空");
+            state.isSaving = false;
+            elements.saveBtn.textContent = '保存并退出';
+            return false;
+        }
+
+        try {
+            const res = await Api.saveNote(state.currentNoteId, title, content);
+            if (res.success) {
+                state.originalTitle = title;
+                state.originalContent = content;
+                state.isDirty = false;
+if (shouldUpdateUI) {
+    if (state.isEditing) {
+        // 编辑模式下，更新输入框的值
+        const titleInput = document.getElementById('edit-title-input');
+        if (titleInput) titleInput.value = title;
+    } else {
+        // 预览模式下，更新 h2
+        const headerEl = document.getElementById('edit-header');
+        if (headerEl) headerEl.textContent = title;
+    }
+    updateNoteTitleInList(state.currentNoteId, title);
+}
+                return true;
+            } else {
+                alert(res.error || "保存失败");
+                return false;
+            }
+        } catch (err) {
+            alert("网络错误，保存失败");
+            return false;
+        } finally {
+            state.isSaving = false;
+            elements.saveBtn.textContent = '保存并退出';
+        }
+    }
+
+    // 自动保存
+    async function autoSaveNote() {
+        if (state.isEditing && state.isDirty && !state.isSaving) {
+            await saveNote(true);
+        }
+    }
+
+    // 退出编辑模式
+async function exitEditModeAndSave() {
+    if (!state.isEditing) return;
+    const success = await saveNote(true);
+    if (success) {
+        // 恢复预览模式
+        state.isEditing = false;
+        elements.editBtn.style.display = 'block';
+        elements.saveBtn.style.display = 'none';
+        elements.richEditorContainer.style.display = 'none';
+        elements.noteView.style.display = 'block';
+        // 更新预览内容
+        elements.noteView.innerHTML = marked.parse(state.originalContent);
+
+        // 恢复标题：将输入框替换为 h2
+        const headerContainer = document.querySelector('.content-header');
+        const input = document.getElementById('edit-title-input');
+        if (input) {
+            const newHeader = document.createElement('h2');
+            newHeader.id = 'edit-header';
+            newHeader.textContent = state.originalTitle;
+            headerContainer.replaceChild(newHeader, input);
+            // 更新全局引用
+            elements.editHeader = newHeader;
+        }
+
+        if (state.autoSaveTimer) clearInterval(state.autoSaveTimer);
+    }
+}
+
+    // 进入编辑模式
+    async function enterEditMode() {
+        if (!state.currentNoteId) {
+            alert('请先选择一条笔记');
+            return;
+        }
+        if (state.isEditing) return;
+
+        // 加载最新笔记内容（确保内容是最新的）
+        const note = await Api.getNoteDetail(state.currentNoteId);
+        state.originalTitle = note.title;
+        state.originalContent = note.content || '';
+        state.isDirty = false;
+
+// 替换标题为输入框
+const headerContainer = document.querySelector('.content-header');
+const oldHeader = elements.editHeader;
+const input = document.createElement('input');
+input.id = 'edit-title-input';
+input.type = 'text';
+input.value = state.originalTitle;
+input.style.fontSize = '24px';
+input.style.fontWeight = '600';
+input.style.padding = '4px 0';
+input.style.border = 'none';
+input.style.borderBottom = '2px solid #0078d4';
+input.style.outline = 'none';
+input.style.backgroundColor = 'transparent';
+input.style.flex = '1';               // 占据剩余空间
+input.style.textAlign = 'center';     // 文字水平居中
+input.addEventListener('input', () => { state.isDirty = true; updateSaveBtnStatus(); });
+headerContainer.replaceChild(input, oldHeader);
+
+        // 显示富文本编辑器
+        elements.editor.innerHTML = state.originalContent;
+        elements.richEditorContainer.style.display = 'flex';
+        elements.noteView.style.display = 'none';
+        elements.editBtn.style.display = 'none';
+        elements.saveBtn.style.display = 'block';
+        state.isEditing = true;
+
+        // 监听编辑器内容变化
+        elements.editor.addEventListener('input', () => {
+            state.isDirty = true;
+            updateSaveBtnStatus();
+        });
+
+        // 启动自动保存定时器
+        if (state.autoSaveTimer) clearInterval(state.autoSaveTimer);
+        state.autoSaveTimer = setInterval(autoSaveNote, 5000);
+
+        updateSaveBtnStatus();
+    }
+
+    function updateSaveBtnStatus() {
+        if (state.isDirty) {
+            elements.saveBtn.textContent = '保存并退出*';
+            elements.saveBtn.classList.add('has-draft');
+        } else {
+            elements.saveBtn.textContent = '保存并退出';
+            elements.saveBtn.classList.remove('has-draft');
+        }
+    }
+
+    // 渲染笔记内容（预览模式）
+    async function renderNoteContent() {
+                // 刷新文件夹列表（高亮新文件夹）
+        renderFolders(elements.folderSearch.value);
+        // 重新渲染笔记列表（高亮当前笔记）
+        await renderNotes();
+        // 如果当前处于编辑模式，强制退出（丢弃未保存的更改）
+    if (state.isEditing) {
+        state.isEditing = false;
+        elements.editBtn.style.display = 'block';
+        elements.saveBtn.style.display = 'none';
+        elements.richEditorContainer.style.display = 'none';
+        elements.noteView.style.display = 'block';
+        // 恢复标题元素
+        const input = document.getElementById('edit-title-input');
+        if (input) {
+            const newHeader = document.createElement('h2');
+            newHeader.id = 'edit-header';
+            newHeader.textContent = state.originalTitle;
+            const headerContainer = document.querySelector('.content-header');
+            headerContainer.replaceChild(newHeader, input);
+            elements.editHeader = newHeader;
+        }
+        if (state.autoSaveTimer) clearInterval(state.autoSaveTimer);
+    }
+        if (!state.currentFolderId || !state.currentNoteId) {
+            elements.noteView.innerHTML = '<div style="padding: 20px; color: #999; text-align: center;">暂无笔记内容</div>';
+            elements.richEditorContainer.style.display = 'none';
+            elements.noteView.style.display = 'block';
+            elements.editBtn.style.display = 'none';
+            // 清空标题
+            const headerEl = document.getElementById('edit-header');
+            if (headerEl) headerEl.textContent = '';
+            return;
+        }
+        const note = await Api.getNoteDetail(state.currentNoteId);
+        state.originalTitle = note.title;
+        state.originalContent = note.content || '';
+        elements.noteView.innerHTML = marked.parse(state.originalContent);
+        hljs.highlightAll();
+        const headerEl = document.getElementById('edit-header');
+if (headerEl) headerEl.textContent = state.originalTitle;
+        elements.noteView.style.display = 'block';
+        elements.richEditorContainer.style.display = 'none';
+        elements.editBtn.style.display = 'block';
+        elements.saveBtn.style.display = 'none';
+        state.isEditing = false;
+        if (state.autoSaveTimer) clearInterval(state.autoSaveTimer);
+    }
+
+    // 切换笔记前的未保存检查
+    async function checkBeforeSwitch(callback) {
+        if (state.isEditing && state.isDirty) {
+            const confirmSave = confirm('当前笔记有未保存的更改，是否保存？\n点击“确定”保存后切换，“取消”将丢弃更改。');
+            if (confirmSave) {
+                const saved = await saveNote(true);
+                if (!saved) return; // 保存失败，停止切换
+            }
+            // 无论是否保存，都退出编辑模式
+// 无论是否保存，都退出编辑模式
+state.isEditing = false;
+elements.editBtn.style.display = 'block';
+elements.saveBtn.style.display = 'none';
+elements.richEditorContainer.style.display = 'none';
+elements.noteView.style.display = 'block';
+
+// 恢复标题元素（如果输入框存在）
+const input = document.getElementById('edit-title-input');
+if (input) {
+    const newHeader = document.createElement('h2');
+    newHeader.id = 'edit-header';
+    newHeader.textContent = state.originalTitle; // 使用未修改的原始标题
+    const headerContainer = document.querySelector('.content-header');
+    headerContainer.replaceChild(newHeader, input);
+    elements.editHeader = newHeader;
+}
+
+if (state.autoSaveTimer) clearInterval(state.autoSaveTimer);
+        }
+        callback();
+    }
+
+    // 渲染文件夹列表（略，与原逻辑相同，但需要在点击时调用 checkBeforeSwitch）
+    async function renderFolders(filter = '') {
+        const folders = await Api.getFolders();
+        const filtered = folders.filter(f => f.name.includes(filter));
+        elements.folderList.innerHTML = '';
+        for (let folder of filtered) {
+            const div = document.createElement('div');
+            div.className = `folder-item ${folder.id === state.currentFolderId ? 'active' : ''}`;
+            div.dataset.id = folder.id;
+            div.innerHTML = `<span>${folder.name}</span><div class="folder-actions"><button class="edit-folder">✏️</button><button class="delete-folder">🗑️</button></div>`;
+            div.querySelector('.edit-folder').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openFolderModal('edit', folder);
+            });
+            div.querySelector('.delete-folder').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openConfirmModal(`确定删除文件夹"${folder.name}"吗？删除后该文件夹下的所有笔记也会被删除！`, async () => {
+                    await Api.deleteFolder(folder.id);
+                    const newFolders = await Api.getFolders();
+                    state.currentFolderId = newFolders.length > 0 ? newFolders[0].id : null;
+                    state.currentNoteId = null;
+                    renderFolders(elements.folderSearch.value);
+                    await renderNotes();
+                    await renderNoteContent();
+                });
+            });
+            div.addEventListener('click', async () => {
+                await checkBeforeSwitch(async () => {
+                    state.currentFolderId = folder.id;
+                    renderFolders(elements.folderSearch.value);
+                    await renderNotes();
+                    const notes = await Api.getNotes(folder.id);
+                    state.currentNoteId = notes.length > 0 ? notes[0].id : null;
+                    await renderNoteContent();
+                });
+            });
+            elements.folderList.appendChild(div);
+        }
+    }
+
+    // 渲染笔记列表
+    async function renderNotes() {
+        if (!state.currentFolderId) {
+            elements.noteList.innerHTML = '<div style="padding: 10px; color: #999;">暂无文件夹</div>';
+            return;
+        }
+        const notes = await Api.getNotes(state.currentFolderId);
+        elements.noteList.innerHTML = '';
+        if (notes.length === 0) {
+            elements.noteList.innerHTML = '<div style="padding: 10px; color: #999;">暂无笔记</div>';
+            return;
+        }
+        for (let note of notes) {
+            const div = document.createElement('div');
+            div.className = `note-item ${note.id === state.currentNoteId ? 'active' : ''}`;
+            div.dataset.id = note.id;
+            div.innerHTML = `<span>${note.title}</span><button class="delete-note-btn">🗑️</button>`;
+            div.querySelector('.delete-note-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                openConfirmModal(`确定删除笔记"${note.title}"吗？`, async () => {
+                    await Api.deleteNote(note.id);
+                    const newNotes = await Api.getNotes(state.currentFolderId);
+                    state.currentNoteId = newNotes.length > 0 ? newNotes[0].id : null;
+                    await renderNotes();
+                    await renderNoteContent();
+                });
+            });
+div.addEventListener('click', async () => {
+    await checkBeforeSwitch(async () => {
+        // 更新当前文件夹为笔记所属的文件夹
+        state.currentFolderId = note.folder_id;
+        state.currentNoteId = note.id;
+
+        // 加载笔记内容
+        await renderNoteContent();
+    });
+});
+            elements.noteList.appendChild(div);
+        }
+    }
+
+    // 新建笔记
+    async function createNewNote() {
+        if (!state.currentFolderId) {
+            alert('请先选择一个文件夹');
+            return;
+        }
+        openNoteModal();
+    }
+
+    // 其他模态框逻辑（与原相同，略修改）
+    function openFolderModal(type, folder = null) {
+    elements.modalTitle.textContent = type === 'add' ? '新建文件夹' : '编辑文件夹';
+    elements.folderNameInput.value = folder ? folder.name : '';
+    elements.folderModal.style.display = 'flex';
+    const handleConfirm = async () => {
+        const name = elements.folderNameInput.value.trim();
+        if (!name) { alert('文件夹名称不能为空！'); return; }
+        if (type === 'add') {
+            const ok = await Api.addFolder(name);
+            if (ok) {
+                // 重新获取文件夹列表，找到新文件夹
+                const folders = await Api.getFolders();
+                const newFolder = folders.find(f => f.name === name);
+                if (newFolder) {
+                    state.currentFolderId = newFolder.id;
+                    state.currentNoteId = null;
+                    renderFolders(elements.folderSearch.value);
+                    await renderNotes();
+                    await renderNoteContent();
+                } else {
+                    renderFolders(elements.folderSearch.value);
+                }
+                closeFolderModal();
+            }
+        } else {
+            const ok = await Api.editFolder(folder.id, name);
+            if (ok) {
+                renderFolders(elements.folderSearch.value);
+                closeFolderModal();
+            }
+        }
+    };
+    elements.folderModalConfirm.onclick = handleConfirm;
+}
+
+    function openNoteModal() {
+        elements.noteModalTitle.textContent = '新建笔记';
+        elements.noteNameInput.value = '';
+        elements.noteModal.style.display = 'flex';
+        const handleConfirm = async () => {
+            const title = elements.noteNameInput.value.trim();
+            if (!title) { alert('笔记名称不能为空！'); return; }
+            const res = await Api.addNote(state.currentFolderId, title);
+            if (res.success) {
+                const notes = await Api.getNotes(state.currentFolderId);
+                state.currentNoteId = notes[notes.length - 1].id;
+                await renderNotes();
+                await renderNoteContent();
+                closeNoteModal();
+            } else {
+                alert(res.error || '新建笔记失败');
+            }
+        };
+        elements.noteModalConfirm.onclick = handleConfirm;
+    }
+
+    function closeFolderModal() { elements.folderModal.style.display = 'none'; elements.folderNameInput.value = ''; }
+    function closeNoteModal() { elements.noteModal.style.display = 'none'; elements.noteNameInput.value = ''; }
+    function openConfirmModal(text, onConfirm) {
+        elements.confirmText.textContent = text;
+        elements.confirmModal.style.display = 'flex';
+        elements.confirmOk.onclick = () => { onConfirm(); closeConfirmModal(); };
+    }
+    function closeConfirmModal() { elements.confirmModal.style.display = 'none'; }
+
+    // 富文本编辑器功能（与原相同）
+    function initRichEditorEvents() {
+        document.getElementById('tableButton').addEventListener('click', function() {
+            const tableGrid = document.getElementById('tableGrid');
+            const content = document.getElementById('tableGridContent');
+            content.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                for (let j = 1; j <= 10; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'w-6 h-6 border border-gray-300 hover:bg-blue-100 cursor-pointer';
+                    cell.dataset.rows = i; cell.dataset.cols = j;
+                    cell.addEventListener('click', function() { insertTable(parseInt(this.dataset.rows), parseInt(this.dataset.cols)); tableGrid.classList.add('hidden'); });
+                    content.appendChild(cell);
+                }
+            }
+            tableGrid.classList.remove('hidden');
+        });
+        elements.editor.addEventListener('mouseup', function(e) {
+            const selection = window.getSelection();
+            if (selection.toString().length > 0) {
+                const toolbar = document.getElementById('textToolbar');
+                toolbar.style.left = `${e.clientX}px`;
+                toolbar.style.top = `${e.clientY}px`;
+                toolbar.classList.remove('hidden');
+            } else { document.getElementById('textToolbar').classList.add('hidden'); }
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#textToolbar') && !e.target.closest('#editor')) {
+                document.getElementById('textToolbar').classList.add('hidden');
+            }
+        });
+    }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        Api.uploadImage(fd).then(data => {
+            if (data.url) {
+                const img = document.createElement('img');
+                img.src = data.url;
+                img.style.maxWidth = '100%'; img.style.borderRadius = '4px'; img.style.margin = '16px 0';
+                elements.editor.appendChild(img);
+            }
+        }).catch(() => alert('图片上传失败'));
+    }
+    function handleVideoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        Api.uploadVideo(fd).then(data => {
+            if (data.url) {
+                const video = document.createElement('video');
+                video.src = data.url; video.controls = true; video.style.maxWidth = '100%'; video.style.borderRadius = '4px'; video.style.margin = '16px 0';
+                elements.editor.appendChild(video);
+            }
+        }).catch(() => alert('视频上传失败'));
+    }
+    function insertTable(rows, cols) {
+        const table = document.createElement('table');
+        table.style.borderCollapse = 'collapse'; table.style.width = '100%'; table.style.margin = '16px 0';
+        for (let i = 0; i < rows; i++) {
+            const tr = document.createElement('tr');
+            for (let j = 0; j < cols; j++) {
+                const td = document.createElement('td');
+                td.style.border = '1px solid #e0e0e0'; td.style.padding = '8px'; td.contentEditable = true; td.textContent = '';
+                tr.appendChild(td);
+            }
+            table.appendChild(tr);
+        }
+        elements.editor.appendChild(table);
+    }
+    function toggleFormat(format) {
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) return;
+        const range = selection.getRangeAt(0);
+        const content = range.extractContents();
+        let element;
+        switch(format) {
+            case 'bold': element = document.createElement('strong'); break;
+            case 'italic': element = document.createElement('em'); break;
+            case 'underline': element = document.createElement('u'); break;
+            case 'highlight': element = document.createElement('mark'); break;
+            case 'link':
+                const url = prompt('请输入链接地址：');
+                if (!url) return;
+                element = document.createElement('a'); element.href = url; element.style.color = '#0078d4';
+                break;
+        }
+        element.appendChild(content);
+        range.insertNode(element);
+    }
+    function insertElement(type) {
+        const selection = window.getSelection();
+        const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : document.createRange();
+        let element;
+        switch(type) {
+            case 'h1': element = document.createElement('h1'); element.textContent = '标题'; break;
+            case 'h2': element = document.createElement('h2'); element.textContent = '副标题'; break;
+            case 'p': element = document.createElement('p'); element.textContent = '输入文本...'; break;
+            case 'ul':
+                element = document.createElement('ul');
+                element.appendChild(document.createElement('li')).textContent = '列表项 1';
+                element.appendChild(document.createElement('li')).textContent = '列表项 2';
+                break;
+            case 'ol':
+                element = document.createElement('ol');
+                element.appendChild(document.createElement('li')).textContent = '有序列表项 1';
+                element.appendChild(document.createElement('li')).textContent = '有序列表项 2';
+                break;
+            case 'checklist':
+                element = document.createElement('ul');
+                element.style.listStyleType = 'none';
+                const li1 = document.createElement('li'); li1.innerHTML = '<input type="checkbox"> 复选项 1';
+                const li2 = document.createElement('li'); li2.innerHTML = '<input type="checkbox"> 复选项 2';
+                element.appendChild(li1); element.appendChild(li2);
+                break;
+            case 'code':
+                element = document.createElement('pre');
+                element.appendChild(document.createElement('code')).textContent = '// 输入代码...';
+                break;
+            case 'blockquote': element = document.createElement('blockquote'); element.textContent = '引用文本...'; break;
+            case 'delimiter': element = document.createElement('hr'); element.style.borderColor = '#e0e0e0'; break;
+        }
+        range.insertNode(element);
+        if (element.contentEditable !== 'false') { const sel = window.getSelection(); sel.selectAllChildren(element); sel.collapseToEnd(); }
+    }
+
+    // 初始化
+    async function init() {
+        await renderFolders();
+        const folders = await Api.getFolders();
+        if (folders.length) state.currentFolderId = folders[0].id;
+        await renderNotes();
+        const notes = await Api.getNotes(state.currentFolderId);
+        if (notes.length) state.currentNoteId = notes[0].id;
+        await renderNoteContent();
+
+        elements.folderSearch.addEventListener('input', (e) => renderFolders(e.target.value));
+        elements.addFolderBtn.addEventListener('click', () => openFolderModal('add'));
+        elements.folderModalCancel.addEventListener('click', closeFolderModal);
+        elements.confirmCancel.addEventListener('click', closeConfirmModal);
+        elements.editBtn.addEventListener('click', enterEditMode);
+        elements.saveBtn.addEventListener('click', exitEditModeAndSave);
+        elements.addNoteBtn.addEventListener('click', createNewNote);
+        elements.noteModalCancel.addEventListener('click', closeNoteModal);
+        initRichEditorEvents();
+    }
+    init();
+    hljs.highlightAll();
+    </script>
+</body>
+</html>
